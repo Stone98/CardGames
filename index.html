@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Card Games</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="game-container">
+        <!-- Game Tabs -->
+        <div class="game-tabs">
+            <button class="tab-button active" data-game="solitaire">
+                <span class="tab-icon">♠</span>
+                Klondike Solitaire
+            </button>
+            <button class="tab-button" data-game="blackjack">
+                <span class="tab-icon">♦</span>
+                Blackjack
+            </button>
+        </div>
+
+        <!-- Solitaire Game -->
+        <div id="solitaire-game" class="game-content active">
+        <header class="game-header">
+            <h1>Klondike Solitaire</h1>
+            <div class="game-controls">
+                <button id="new-game-btn">New Game</button>
+                <button id="auto-play-btn">Auto Play</button>
+                <div class="score">Score: <span id="score">0</span></div>
+                <div class="moves">Moves: <span id="moves">0</span></div>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <!-- Rules Panel -->
+            <div class="rules-panel">
+                <div class="rules-header">
+                    <h2>🎯 How to Play</h2>
+                    <button id="toggle-rules" class="toggle-btn">−</button>
+                </div>
+                
+                <div class="rules-content" id="rules-content">
+                    <div class="rule-section">
+                        <h3>🎲 Objective</h3>
+                        <p>Move all cards to the four foundation piles, building up by suit from Ace to King.</p>
+                    </div>
+
+                    <div class="rule-section">
+                        <h3>🏗️ Setup</h3>
+                        <ul>
+                            <li>7 tableau columns with 1-7 cards each</li>
+                            <li>Top card of each column is face-up</li>
+                            <li>Remaining cards form the stock pile</li>
+                        </ul>
+                    </div>
+
+                    <div class="rule-section">
+                        <h3>🎮 Gameplay</h3>
+                        <ul>
+                            <li><strong>Tableau:</strong> Build down in alternating colors (red on black, black on red)</li>
+                            <li><strong>Foundations:</strong> Build up by suit (A, 2, 3... J, Q, K)</li>
+                            <li><strong>Stock:</strong> Click to deal cards to waste pile</li>
+                            <li><strong>Empty columns:</strong> Only Kings can be placed</li>
+                        </ul>
+                    </div>
+
+                    <div class="rule-section">
+                        <h3>🎯 Moves</h3>
+                        <ul>
+                            <li>Drag cards between piles</li>
+                            <li>Click cards to auto-move to foundations</li>
+                            <li>Click stock pile to deal new cards</li>
+                            <li>Flip face-down cards by clearing above them</li>
+                        </ul>
+                    </div>
+
+                    <div class="rule-section">
+                        <h3>� Game Over</h3>
+                        <ul>
+                            <li><strong>You Win:</strong> All 52 cards moved to foundation piles (A-K in each suit)</li>
+                            <li><strong>You Lose:</strong> No more moves available and foundations incomplete</li>
+                            <li><strong>Stuck?</strong> Check if you can:
+                                <ul>
+                                    <li>Move any tableau cards between columns</li>
+                                    <li>Move cards from waste to tableau or foundations</li>
+                                    <li>Deal more cards from stock (if available)</li>
+                                    <li>Flip any face-down cards by clearing above them</li>
+                                </ul>
+                            </li>
+                            <li><strong>New Game:</strong> Click "New Game" to shuffle and restart</li>
+                        </ul>
+                    </div>
+
+                    <div class="rule-section">
+                        <h3>�🏆 Scoring</h3>
+                        <ul>
+                            <li>+10 points for moving to foundation</li>
+                            <li>+5 points for flipping a card</li>
+                            <li>+5 points for waste to tableau</li>
+                        </ul>
+                    </div>
+
+                    <div class="rule-section">
+                        <h3>💡 Tips</h3>
+                        <ul>
+                            <li>Try to expose face-down cards first</li>
+                            <li>Don't rush to move cards to foundations</li>
+                            <li>Keep tableau columns balanced</li>
+                            <li>Use auto-play to learn strategy!</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Game Board -->
+            <div class="game-board">
+                <!-- Stock and Waste piles -->
+                <div class="top-section">
+                    <div class="stock-waste">
+                        <div class="pile stock-pile" id="stock-pile">
+                            <div class="card-placeholder">Stock</div>
+                        </div>
+                        <div class="pile waste-pile" id="waste-pile">
+                            <div class="card-placeholder">Waste</div>
+                        </div>
+                    </div>
+
+                    <!-- Foundation piles -->
+                    <div class="foundations">
+                        <div class="pile foundation-pile" id="foundation-0" data-suit="hearts">
+                            <div class="card-placeholder">♥</div>
+                        </div>
+                        <div class="pile foundation-pile" id="foundation-1" data-suit="diamonds">
+                            <div class="card-placeholder">♦</div>
+                        </div>
+                        <div class="pile foundation-pile" id="foundation-2" data-suit="clubs">
+                            <div class="card-placeholder">♣</div>
+                        </div>
+                        <div class="pile foundation-pile" id="foundation-3" data-suit="spades">
+                            <div class="card-placeholder">♠</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tableau piles -->
+                <div class="tableau">
+                    <div class="pile tableau-pile" id="tableau-0"></div>
+                    <div class="pile tableau-pile" id="tableau-1"></div>
+                    <div class="pile tableau-pile" id="tableau-2"></div>
+                    <div class="pile tableau-pile" id="tableau-3"></div>
+                    <div class="pile tableau-pile" id="tableau-4"></div>
+                    <div class="pile tableau-pile" id="tableau-5"></div>
+                    <div class="pile tableau-pile" id="tableau-6"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Win message -->
+        <div id="win-message" class="win-message hidden">
+            <div class="win-content">
+                <h2>🎉 Congratulations! 🎉</h2>
+                <p>You won the game!</p>
+                <p>Final Score: <span id="final-score"></span></p>
+                <p>Total Moves: <span id="final-moves"></span></p>
+                <button id="play-again-btn">Play Again</button>
+            </div>
+        </div>
+
+        <!-- Lose message -->
+        <div id="lose-message" class="lose-message hidden">
+            <div class="lose-content">
+                <h2>😔 Game Over</h2>
+                <p>No more moves available!</p>
+                <p>Final Score: <span id="lose-final-score"></span></p>
+                <p>Total Moves: <span id="lose-final-moves"></span></p>
+                <p class="restart-info">Starting new game in <span id="restart-countdown">5</span> seconds...</p>
+            </div>
+        </div>
+        </div>
+
+        <!-- Blackjack Game -->
+        <div id="blackjack-game" class="game-content">
+            <header class="game-header">
+                <h1>Blackjack</h1>
+                <div class="game-controls">
+                    <button id="bj-new-game-btn">New Game</button>
+                    <div class="score">Chips: $<span id="bj-chips">1000</span></div>
+                    <div class="moves">Games: <span id="bj-games">0</span></div>
+                </div>
+            </header>
+
+            <div class="main-content">
+                <!-- Blackjack Rules Panel -->
+                <div class="rules-panel">
+                    <div class="rules-header">
+                        <h2>🃏 How to Play</h2>
+                        <button id="toggle-bj-rules" class="toggle-btn">−</button>
+                    </div>
+                    
+                    <div class="rules-content" id="bj-rules-content">
+                        <div class="rule-section">
+                            <h3>🎯 Objective</h3>
+                            <p>Beat the dealer by getting as close to 21 as possible without going over.</p>
+                        </div>
+
+                        <div class="rule-section">
+                            <h3>🃏 Card Values</h3>
+                            <ul>
+                                <li><strong>Aces:</strong> 1 or 11 (whichever is better)</li>
+                                <li><strong>Face Cards:</strong> King, Queen, Jack = 10</li>
+                                <li><strong>Number Cards:</strong> Face value (2-10)</li>
+                            </ul>
+                        </div>
+
+                        <div class="rule-section">
+                            <h3>🎮 Gameplay</h3>
+                            <ul>
+                                <li><strong>Place Bet:</strong> Choose $25, $50, $100, or $250</li>
+                                <li><strong>Initial Deal:</strong> 2 cards each (dealer's 1st hidden)</li>
+                                <li><strong>Your Turn:</strong> Hit, Stand, or Double Down</li>
+                                <li><strong>Dealer Turn:</strong> Must hit on 16, stand on 17</li>
+                            </ul>
+                        </div>
+
+                        <div class="rule-section">
+                            <h3>🎲 Actions</h3>
+                            <ul>
+                                <li><strong>Hit:</strong> Take another card</li>
+                                <li><strong>Stand:</strong> Keep current hand</li>
+                                <li><strong>Double Down:</strong> Double bet + take exactly 1 card</li>
+                                <li><strong>Blackjack:</strong> Ace + 10-value card (21 with 2 cards)</li>
+                            </ul>
+                        </div>
+
+                        <div class="rule-section">
+                            <h3>🏆 Winning</h3>
+                            <ul>
+                                <li><strong>Blackjack:</strong> 3:2 payout ($150 on $100 bet)</li>
+                                <li><strong>Regular Win:</strong> 1:1 payout (double your bet)</li>
+                                <li><strong>Push:</strong> Tie - bet returned</li>
+                                <li><strong>Bust:</strong> Over 21 - lose bet</li>
+                            </ul>
+                        </div>
+
+                        <div class="rule-section">
+                            <h3>📊 Strategy Tips</h3>
+                            <ul>
+                                <li>Always hit on 11 or less</li>
+                                <li>Always stand on 17 or more</li>
+                                <li>Double down on 11 vs dealer 2-10</li>
+                                <li>Never take insurance</li>
+                                <li>Manage your bankroll wisely!</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Game Board -->
+            <div class="blackjack-board">
+                <!-- Betting Area -->
+                <div class="betting-area">
+                    <div class="bet-controls">
+                        <h3>Place Your Bet</h3>
+                        <div class="bet-buttons">
+                            <button class="bet-btn" data-amount="25">$25</button>
+                            <button class="bet-btn" data-amount="50">$50</button>
+                            <button class="bet-btn" data-amount="100">$100</button>
+                            <button class="bet-btn" data-amount="250">$250</button>
+                        </div>
+                        <div class="current-bet">
+                            Current Bet: $<span id="current-bet">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Game Area -->
+                <div class="game-area">
+                    <!-- Dealer Area -->
+                    <div class="dealer-area">
+                        <h3>Dealer <span class="hand-value" id="dealer-value">0</span></h3>
+                        <div class="hand" id="dealer-hand"></div>
+                    </div>
+
+                    <!-- Player Area -->
+                    <div class="player-area">
+                        <h3>You <span class="hand-value" id="player-value">0</span></h3>
+                        <div class="hand" id="player-hand"></div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="action-buttons">
+                        <button id="deal-btn" class="action-btn primary">Deal</button>
+                        <button id="hit-btn" class="action-btn" disabled>Hit</button>
+                        <button id="stand-btn" class="action-btn" disabled>Stand</button>
+                        <button id="double-btn" class="action-btn" disabled>Double Down</button>
+                    </div>
+                </div>
+
+                <!-- Game Status -->
+                <div class="game-status">
+                    <div id="bj-message" class="message"></div>
+                </div>
+            </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
