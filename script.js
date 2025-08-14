@@ -1584,7 +1584,11 @@ class BlackjackGame {
         const playDealerCard = () => {
             const dealerValue = this.getHandValue(this.dealerHand);
             
-            if (dealerValue < 17) {
+            // Dealer stands on soft 17 (and all other 17s)
+            // This means dealer only hits when value < 17
+            const shouldHit = dealerValue < 17;
+            
+            if (shouldHit) {
                 this.dealerHand.push(this.deck.pop());
                 this.renderHands();
                 setTimeout(playDealerCard, 1000);
@@ -1651,6 +1655,25 @@ class BlackjackGame {
                 this.showMessage("Place your bet for the next hand.");
             }
         }, 3000);
+    }
+    
+    isSoftHand(hand) {
+        // A soft hand contains an ace that's being counted as 11
+        // This method is kept for potential future use
+        let value = 0;
+        let aces = 0;
+        
+        for (let card of hand) {
+            if (card.rank === 'A') {
+                aces++;
+                value += 11;
+            } else {
+                value += card.value;
+            }
+        }
+        
+        // If we have aces and the total is <= 21, we have at least one ace counted as 11
+        return aces > 0 && value <= 21;
     }
     
     getHandValue(hand) {
