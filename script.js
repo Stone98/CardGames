@@ -1643,7 +1643,10 @@ class BlackjackGame {
         
         const playerValue = this.getHandValue(this.playerHand);
         if (playerValue > 21) {
-            this.endGame(false, "Bust! You lose.");
+            this.showBustGraphic();
+            setTimeout(() => {
+                this.endGame(false, "Bust! You lose.", "bust");
+            }, 2000);
         } else if (playerValue === 21) {
             this.stand(); // Auto-stand on 21
         } else {
@@ -1679,7 +1682,10 @@ class BlackjackGame {
         
         const playerValue = this.getHandValue(this.playerHand);
         if (playerValue > 21) {
-            this.endGame(false, "Bust! You lose.");
+            this.showBustGraphic();
+            setTimeout(() => {
+                this.endGame(false, "Bust! You lose.", "bust");
+            }, 2000);
         } else {
             this.stand();
         }
@@ -1713,18 +1719,23 @@ class BlackjackGame {
         
         let message = "";
         let playerWins = false;
+        let winReason = "";
         
         if (dealerValue > 21) {
             message = "Dealer busts! You win!";
+            winReason = "dealer_bust";
             playerWins = true;
         } else if (playerValue > dealerValue) {
             message = "You win!";
+            winReason = "higher_value";
             playerWins = true;
         } else if (playerValue < dealerValue) {
             message = "Dealer wins!";
+            winReason = "dealer_wins";
             playerWins = false;
         } else {
             message = "Push! It's a tie.";
+            winReason = "push";
             this.chips += this.currentBet; // Return bet
         }
         
@@ -1732,36 +1743,55 @@ class BlackjackGame {
         if (playerWins && playerValue === 21 && this.playerHand.length === 2) {
             this.chips += Math.floor(this.currentBet * 2.5); // 3:2 payout
             message = "Blackjack! You win!";
+            winReason = "blackjack";
         } else if (playerWins) {
             this.chips += this.currentBet * 2; // 1:1 payout
         }
         
-        this.endGame(playerWins, message);
+        this.endGame(playerWins, message, winReason);
     }
     
-    endGame(playerWon, message) {
+    endGame(playerWon, message, winReason = "") {
         this.gameInProgress = false;
         this.dealerRevealed = true;
         this.gamesPlayed++;
         
         this.enableGameButtons(false);
-        this.showMessage(message);
         this.updateDisplay();
         this.renderHands();
         
+        // Show appropriate graphic based on game result
+        if (playerWon || winReason === "push") {
+            this.showWinGraphic(winReason, message);
+            // Delay showing the message until after the graphic
+            setTimeout(() => {
+                this.showMessage(message);
+            }, 2000);
+        } else if (winReason === "dealer_wins") {
+            this.showLoseGraphic();
+            // Delay showing the message until after the graphic
+            setTimeout(() => {
+                this.showMessage(message);
+            }, 2000);
+        } else {
+            // For bust, the graphic is already shown before endGame is called
+            this.showMessage(message);
+        }
+        
         // Reset for next game
+        const hasGraphic = playerWon || winReason === "push" || winReason === "dealer_wins";
         setTimeout(() => {
             this.currentBet = 0;
             this.updateDisplay();
             document.getElementById('deal-btn').disabled = false;
             
             if (this.chips <= 0) {
-                this.showMessage("Game Over! No more chips. Starting new game...");
+                this.showGameOverGraphic();
                 setTimeout(() => this.newGame(), 3000);
             } else {
                 this.showMessage("Place your bet for the next hand.");
             }
-        }, 3000);
+        }, hasGraphic ? 4000 : 3000); // Extra delay for graphics
     }
     
     isSoftHand(hand) {
@@ -1882,6 +1912,470 @@ class BlackjackGame {
     
     showMessage(message) {
         document.getElementById('bj-message').textContent = message;
+    }
+    
+    showBustGraphic() {
+        // Add screen shake effect to the game container
+        const gameContainer = document.querySelector('.game-container');
+        if (gameContainer) {
+            gameContainer.style.animation = 'screenShake 0.5s ease-in-out';
+            setTimeout(() => {
+                gameContainer.style.animation = '';
+            }, 500);
+        }
+        
+        // Create bust overlay
+        const bustOverlay = document.createElement('div');
+        bustOverlay.className = 'bust-overlay';
+        bustOverlay.innerHTML = `
+            <div class="bust-content">
+                <div class="bust-text">BUST!</div>
+                <div class="bust-subtitle">Over 21!</div>
+            </div>
+        `;
+        
+        // Add styles
+        bustOverlay.style.position = 'fixed';
+        bustOverlay.style.top = '0';
+        bustOverlay.style.left = '0';
+        bustOverlay.style.width = '100%';
+        bustOverlay.style.height = '100%';
+        bustOverlay.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+        bustOverlay.style.display = 'flex';
+        bustOverlay.style.alignItems = 'center';
+        bustOverlay.style.justifyContent = 'center';
+        bustOverlay.style.zIndex = '9999';
+        bustOverlay.style.backdropFilter = 'blur(10px)';
+        bustOverlay.style.animation = 'bustAppear 0.3s ease-out';
+        
+        // Style the content
+        const bustContent = bustOverlay.querySelector('.bust-content');
+        bustContent.style.textAlign = 'center';
+        bustContent.style.color = 'white';
+        bustContent.style.textShadow = '0 0 20px rgba(0, 0, 0, 0.8)';
+        bustContent.style.animation = 'bustPulse 0.6s ease-in-out infinite alternate';
+        
+        // Style the main text
+        const bustText = bustOverlay.querySelector('.bust-text');
+        bustText.style.fontSize = 'clamp(4rem, 15vw, 12rem)';
+        bustText.style.fontWeight = '900';
+        bustText.style.letterSpacing = '0.1em';
+        bustText.style.marginBottom = '1rem';
+        bustText.style.fontFamily = 'Arial, sans-serif';
+        
+        // Style the subtitle
+        const bustSubtitle = bustOverlay.querySelector('.bust-subtitle');
+        bustSubtitle.style.fontSize = 'clamp(1.5rem, 4vw, 3rem)';
+        bustSubtitle.style.fontWeight = '600';
+        bustSubtitle.style.opacity = '0.9';
+        
+        // Add keyframes for animations if not already added
+        if (!document.getElementById('bust-animation-styles')) {
+            const style = document.createElement('style');
+            style.id = 'bust-animation-styles';
+            style.textContent = `
+                @keyframes bustAppear {
+                    0% {
+                        opacity: 0;
+                        transform: scale(0.5);
+                    }
+                    100% {
+                        opacity: 1;
+                        transform: scale(1);
+                    }
+                }
+                @keyframes bustPulse {
+                    0% {
+                        transform: scale(1) rotate(-1deg);
+                    }
+                    100% {
+                        transform: scale(1.05) rotate(1deg);
+                    }
+                }
+                @keyframes screenShake {
+                    0%, 100% { transform: translateX(0); }
+                    10% { transform: translateX(-5px) rotate(-0.5deg); }
+                    20% { transform: translateX(5px) rotate(0.5deg); }
+                    30% { transform: translateX(-3px) rotate(-0.3deg); }
+                    40% { transform: translateX(3px) rotate(0.3deg); }
+                    50% { transform: translateX(-2px) rotate(-0.2deg); }
+                    60% { transform: translateX(2px) rotate(0.2deg); }
+                    70% { transform: translateX(-1px) rotate(-0.1deg); }
+                    80% { transform: translateX(1px) rotate(0.1deg); }
+                    90% { transform: translateX(0) rotate(0deg); }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        // Add to page
+        document.body.appendChild(bustOverlay);
+        
+        // Remove after 2 seconds
+        setTimeout(() => {
+            if (document.body.contains(bustOverlay)) {
+                bustOverlay.style.animation = 'bustAppear 0.3s ease-in reverse';
+                setTimeout(() => {
+                    if (document.body.contains(bustOverlay)) {
+                        document.body.removeChild(bustOverlay);
+                    }
+                }, 300);
+            }
+        }, 2000);
+    }
+    
+    showWinGraphic(winReason, message) {
+        // Determine the main text and subtitle based on win reason
+        let mainText = "";
+        let subtitle = "";
+        let backgroundColor = "";
+        
+        switch (winReason) {
+            case "blackjack":
+                mainText = "BLACKJACK!";
+                subtitle = "Natural 21 • 3:2 Payout";
+                backgroundColor = "rgba(75, 85, 99, 0.9)"; // Gray
+                break;
+            case "dealer_bust":
+                mainText = "YOU WIN!";
+                subtitle = "Dealer Busted";
+                backgroundColor = "rgba(75, 85, 99, 0.9)"; // Gray
+                break;
+            case "higher_value":
+                mainText = "YOU WIN!";
+                subtitle = "Higher Hand Value";
+                backgroundColor = "rgba(75, 85, 99, 0.9)"; // Gray
+                break;
+            case "push":
+                mainText = "PUSH!";
+                subtitle = "It's a Tie";
+                backgroundColor = "rgba(59, 130, 246, 0.9)"; // Blue
+                break;
+            default:
+                mainText = "YOU WIN!";
+                subtitle = "";
+                backgroundColor = "rgba(75, 85, 99, 0.9)"; // Gray
+        }
+        
+        // Create win overlay
+        const winOverlay = document.createElement('div');
+        winOverlay.className = 'win-overlay';
+        winOverlay.innerHTML = `
+            <div class="win-content">
+                <div class="win-text">${mainText}</div>
+                <div class="win-subtitle">${subtitle}</div>
+            </div>
+        `;
+        
+        // Add styles
+        winOverlay.style.position = 'fixed';
+        winOverlay.style.top = '0';
+        winOverlay.style.left = '0';
+        winOverlay.style.width = '100%';
+        winOverlay.style.height = '100%';
+        winOverlay.style.backgroundColor = backgroundColor;
+        winOverlay.style.display = 'flex';
+        winOverlay.style.alignItems = 'center';
+        winOverlay.style.justifyContent = 'center';
+        winOverlay.style.zIndex = '9999';
+        winOverlay.style.backdropFilter = 'blur(10px)';
+        winOverlay.style.animation = 'winAppear 0.5s ease-out';
+        
+        // Style the content
+        const winContent = winOverlay.querySelector('.win-content');
+        winContent.style.textAlign = 'center';
+        winContent.style.color = '#22c55e'; // Green text
+        winContent.style.textShadow = '0 0 20px rgba(0, 0, 0, 0.8)';
+        winContent.style.animation = 'winCelebrate 1s ease-in-out infinite alternate';
+        
+        // Style the main text
+        const winText = winOverlay.querySelector('.win-text');
+        winText.style.fontSize = 'clamp(3rem, 12vw, 10rem)';
+        winText.style.fontWeight = '900';
+        winText.style.letterSpacing = '0.1em';
+        winText.style.marginBottom = '1rem';
+        winText.style.fontFamily = 'Arial, sans-serif';
+        
+        // Style the subtitle
+        const winSubtitle = winOverlay.querySelector('.win-subtitle');
+        winSubtitle.style.fontSize = 'clamp(1.2rem, 3vw, 2.5rem)';
+        winSubtitle.style.fontWeight = '600';
+        winSubtitle.style.opacity = '0.95';
+        
+        // Add keyframes for win animations if not already added
+        if (!document.getElementById('win-animation-styles')) {
+            const style = document.createElement('style');
+            style.id = 'win-animation-styles';
+            style.textContent = `
+                @keyframes winAppear {
+                    0% {
+                        opacity: 0;
+                        transform: scale(0.3) rotate(-10deg);
+                    }
+                    50% {
+                        transform: scale(1.1) rotate(2deg);
+                    }
+                    100% {
+                        opacity: 1;
+                        transform: scale(1) rotate(0deg);
+                    }
+                }
+                @keyframes winCelebrate {
+                    0% {
+                        transform: scale(1) rotate(-0.5deg);
+                    }
+                    100% {
+                        transform: scale(1.02) rotate(0.5deg);
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        // Add to page
+        document.body.appendChild(winOverlay);
+        
+        // Remove after 2 seconds
+        setTimeout(() => {
+            if (document.body.contains(winOverlay)) {
+                winOverlay.style.animation = 'winAppear 0.5s ease-in reverse';
+                setTimeout(() => {
+                    if (document.body.contains(winOverlay)) {
+                        document.body.removeChild(winOverlay);
+                    }
+                }, 500);
+            }
+        }, 2000);
+    }
+    
+    showLoseGraphic() {
+        // Create lose overlay
+        const loseOverlay = document.createElement('div');
+        loseOverlay.className = 'lose-overlay';
+        loseOverlay.innerHTML = `
+            <div class="lose-content">
+                <div class="lose-text">YOU LOSE</div>
+                <div class="lose-subtitle">Dealer Wins</div>
+            </div>
+        `;
+        
+        // Add styles
+        loseOverlay.style.position = 'fixed';
+        loseOverlay.style.top = '0';
+        loseOverlay.style.left = '0';
+        loseOverlay.style.width = '100%';
+        loseOverlay.style.height = '100%';
+        loseOverlay.style.backgroundColor = 'rgba(75, 85, 99, 0.9)'; // Gray
+        loseOverlay.style.display = 'flex';
+        loseOverlay.style.alignItems = 'center';
+        loseOverlay.style.justifyContent = 'center';
+        loseOverlay.style.zIndex = '9999';
+        loseOverlay.style.backdropFilter = 'blur(10px)';
+        loseOverlay.style.animation = 'loseAppear 0.4s ease-out';
+        
+        // Style the content
+        const loseContent = loseOverlay.querySelector('.lose-content');
+        loseContent.style.textAlign = 'center';
+        loseContent.style.color = 'white';
+        loseContent.style.textShadow = '0 0 20px rgba(0, 0, 0, 0.8)';
+        loseContent.style.animation = 'loseSway 1.5s ease-in-out infinite alternate';
+        
+        // Style the main text
+        const loseText = loseOverlay.querySelector('.lose-text');
+        loseText.style.fontSize = 'clamp(3rem, 12vw, 10rem)';
+        loseText.style.fontWeight = '900';
+        loseText.style.letterSpacing = '0.05em';
+        loseText.style.marginBottom = '1rem';
+        loseText.style.fontFamily = 'Arial, sans-serif';
+        loseText.style.opacity = '0.9';
+        
+        // Style the subtitle
+        const loseSubtitle = loseOverlay.querySelector('.lose-subtitle');
+        loseSubtitle.style.fontSize = 'clamp(1.2rem, 3vw, 2.5rem)';
+        loseSubtitle.style.fontWeight = '600';
+        loseSubtitle.style.opacity = '0.8';
+        
+        // Add keyframes for lose animations if not already added
+        if (!document.getElementById('lose-animation-styles')) {
+            const style = document.createElement('style');
+            style.id = 'lose-animation-styles';
+            style.textContent = `
+                @keyframes loseAppear {
+                    0% {
+                        opacity: 0;
+                        transform: scale(1.2);
+                        filter: blur(5px);
+                    }
+                    100% {
+                        opacity: 1;
+                        transform: scale(1);
+                        filter: blur(0px);
+                    }
+                }
+                @keyframes loseSway {
+                    0% {
+                        transform: translateY(-2px) rotate(-0.5deg);
+                        opacity: 0.9;
+                    }
+                    100% {
+                        transform: translateY(2px) rotate(0.5deg);
+                        opacity: 0.95;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        // Add to page
+        document.body.appendChild(loseOverlay);
+        
+        // Remove after 2 seconds
+        setTimeout(() => {
+            if (document.body.contains(loseOverlay)) {
+                loseOverlay.style.animation = 'loseAppear 0.4s ease-in reverse';
+                setTimeout(() => {
+                    if (document.body.contains(loseOverlay)) {
+                        document.body.removeChild(loseOverlay);
+                    }
+                }, 400);
+            }
+        }, 2000);
+    }
+    
+    showGameOverGraphic() {
+        // Create game over overlay
+        const gameOverOverlay = document.createElement('div');
+        gameOverOverlay.className = 'game-over-overlay';
+        gameOverOverlay.innerHTML = `
+            <div class="game-over-content">
+                <div class="game-over-text">GAME OVER</div>
+                <div class="game-over-subtitle">No More Chips!</div>
+                <div class="game-over-countdown">
+                    <div class="countdown-text">New Game Starting In</div>
+                    <div class="countdown-number" id="game-over-countdown">3</div>
+                </div>
+            </div>
+        `;
+        
+        // Add styles
+        gameOverOverlay.style.position = 'fixed';
+        gameOverOverlay.style.top = '0';
+        gameOverOverlay.style.left = '0';
+        gameOverOverlay.style.width = '100%';
+        gameOverOverlay.style.height = '100%';
+        gameOverOverlay.style.backgroundColor = 'rgba(239, 68, 68, 0.95)'; // Red
+        gameOverOverlay.style.display = 'flex';
+        gameOverOverlay.style.alignItems = 'center';
+        gameOverOverlay.style.justifyContent = 'center';
+        gameOverOverlay.style.zIndex = '9999';
+        gameOverOverlay.style.backdropFilter = 'blur(15px)';
+        gameOverOverlay.style.animation = 'gameOverAppear 0.6s ease-out';
+        
+        // Style the content
+        const gameOverContent = gameOverOverlay.querySelector('.game-over-content');
+        gameOverContent.style.textAlign = 'center';
+        gameOverContent.style.color = 'white';
+        gameOverContent.style.textShadow = '0 0 30px rgba(0, 0, 0, 0.8)';
+        
+        // Style the main text
+        const gameOverText = gameOverOverlay.querySelector('.game-over-text');
+        gameOverText.style.fontSize = 'clamp(3rem, 12vw, 10rem)';
+        gameOverText.style.fontWeight = '900';
+        gameOverText.style.letterSpacing = '0.1em';
+        gameOverText.style.marginBottom = '1rem';
+        gameOverText.style.fontFamily = 'Arial, sans-serif';
+        gameOverText.style.animation = 'gameOverPulse 1s ease-in-out infinite alternate';
+        
+        // Style the subtitle
+        const gameOverSubtitle = gameOverOverlay.querySelector('.game-over-subtitle');
+        gameOverSubtitle.style.fontSize = 'clamp(1.5rem, 4vw, 3rem)';
+        gameOverSubtitle.style.fontWeight = '600';
+        gameOverSubtitle.style.marginBottom = '2rem';
+        gameOverSubtitle.style.opacity = '0.9';
+        
+        // Style the countdown section
+        const countdownSection = gameOverOverlay.querySelector('.game-over-countdown');
+        countdownSection.style.marginTop = '2rem';
+        
+        const countdownText = gameOverOverlay.querySelector('.countdown-text');
+        countdownText.style.fontSize = 'clamp(1rem, 2.5vw, 1.5rem)';
+        countdownText.style.fontWeight = '500';
+        countdownText.style.marginBottom = '0.5rem';
+        countdownText.style.opacity = '0.8';
+        
+        const countdownNumber = gameOverOverlay.querySelector('.countdown-number');
+        countdownNumber.style.fontSize = 'clamp(2rem, 6vw, 4rem)';
+        countdownNumber.style.fontWeight = '900';
+        countdownNumber.style.color = '#fbbf24'; // Gold
+        countdownNumber.style.textShadow = '0 0 20px rgba(251, 191, 36, 0.6)';
+        countdownNumber.style.animation = 'countdownTick 1s ease-in-out infinite';
+        
+        // Add keyframes for game over animations if not already added
+        if (!document.getElementById('game-over-animation-styles')) {
+            const style = document.createElement('style');
+            style.id = 'game-over-animation-styles';
+            style.textContent = `
+                @keyframes gameOverAppear {
+                    0% {
+                        opacity: 0;
+                        transform: scale(0.8);
+                        filter: blur(10px);
+                    }
+                    100% {
+                        opacity: 1;
+                        transform: scale(1);
+                        filter: blur(0px);
+                    }
+                }
+                @keyframes gameOverPulse {
+                    0% {
+                        transform: scale(1) rotate(-0.5deg);
+                        opacity: 0.9;
+                    }
+                    100% {
+                        transform: scale(1.02) rotate(0.5deg);
+                        opacity: 1;
+                    }
+                }
+                @keyframes countdownTick {
+                    0% {
+                        transform: scale(1);
+                    }
+                    50% {
+                        transform: scale(1.2);
+                    }
+                    100% {
+                        transform: scale(1);
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        // Add to page
+        document.body.appendChild(gameOverOverlay);
+        
+        // Start countdown
+        let countdown = 3;
+        const countdownElement = gameOverOverlay.querySelector('#game-over-countdown');
+        
+        const countdownInterval = setInterval(() => {
+            countdown--;
+            if (countdown > 0) {
+                countdownElement.textContent = countdown;
+            } else {
+                clearInterval(countdownInterval);
+                // Remove overlay
+                if (document.body.contains(gameOverOverlay)) {
+                    gameOverOverlay.style.animation = 'gameOverAppear 0.6s ease-in reverse';
+                    setTimeout(() => {
+                        if (document.body.contains(gameOverOverlay)) {
+                            document.body.removeChild(gameOverOverlay);
+                        }
+                    }, 600);
+                }
+            }
+        }, 1000);
     }
     
     newGame() {
