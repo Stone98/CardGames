@@ -1,3 +1,4 @@
+
 # Premium Card Games - AI Coding Instructions
 
 ## Project Architecture
