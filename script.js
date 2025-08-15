@@ -32,8 +32,86 @@ class SolitaireGame {
         this.createDeck();
         this.shuffleDeck();
         this.dealCards();
-        this.renderGame();
+        this.renderGameWithInitialAnimation();
         this.updateScore();
+    }
+    
+    renderGameWithInitialAnimation() {
+        this.renderStockWithAnimation();
+        this.renderWasteWithAnimation();
+        this.renderFoundationsWithAnimation();
+        this.renderTableauWithAnimation();
+    }
+    
+    renderStockWithAnimation() {
+        const stockPile = document.getElementById('stock-pile');
+        stockPile.innerHTML = '';
+        
+        if (this.stock.length > 0) {
+            const cardElement = this.createCardElement(this.stock[this.stock.length - 1], false, false);
+            cardElement.style.position = 'relative';
+            stockPile.appendChild(cardElement);
+        } else {
+            stockPile.innerHTML = '<div class="card-placeholder">↻</div>';
+        }
+    }
+    
+    renderWasteWithAnimation() {
+        const wastePile = document.getElementById('waste-pile');
+        wastePile.innerHTML = '';
+        
+        if (this.waste.length > 0) {
+            const card = this.waste[this.waste.length - 1];
+            const cardElement = this.createCardElement(card, true, false);
+            cardElement.style.position = 'relative';
+            cardElement.addEventListener('click', () => this.selectCard(card, 'waste'));
+            this.setupCardDrag(cardElement, card, 'waste');
+            wastePile.appendChild(cardElement);
+        } else {
+            wastePile.innerHTML = '<div class="card-placeholder">Waste</div>';
+        }
+    }
+    
+    renderFoundationsWithAnimation() {
+        for (let i = 0; i < 4; i++) {
+            const foundationPile = document.getElementById(`foundation-${i}`);
+            foundationPile.innerHTML = '';
+            
+            if (this.foundations[i].length > 0) {
+                const card = this.foundations[i][this.foundations[i].length - 1];
+                const cardElement = this.createCardElement(card, true, false);
+                cardElement.style.position = 'relative';
+                foundationPile.appendChild(cardElement);
+            } else {
+                foundationPile.innerHTML = `<div class="card-placeholder">${this.suitSymbols[this.suits[i]]}</div>`;
+            }
+        }
+    }
+    
+    renderTableauWithAnimation() {
+        for (let col = 0; col < 7; col++) {
+            const tableauPile = document.getElementById(`tableau-${col}`);
+            tableauPile.innerHTML = '';
+            
+            if (this.tableau[col].length === 0) {
+                tableauPile.innerHTML = '<div class="card-placeholder">K</div>';
+                continue;
+            }
+            
+            this.tableau[col].forEach((card, index) => {
+                const cardElement = this.createCardElement(card, card.faceUp, false);
+                cardElement.style.position = 'absolute';
+                cardElement.style.top = `${index * 20}px`;
+                cardElement.style.zIndex = index;
+                
+                if (card.faceUp) {
+                    cardElement.addEventListener('click', () => this.selectCard(card, 'tableau', col));
+                    this.setupCardDrag(cardElement, card, 'tableau', col);
+                }
+                
+                tableauPile.appendChild(cardElement);
+            });
+        }
     }
     
     createDeck() {
@@ -131,7 +209,7 @@ class SolitaireGame {
         stockPile.innerHTML = '';
         
         if (this.stock.length > 0) {
-            const cardElement = this.createCardElement(this.stock[this.stock.length - 1], false);
+            const cardElement = this.createCardElement(this.stock[this.stock.length - 1], false, true);
             cardElement.style.position = 'relative';
             stockPile.appendChild(cardElement);
         } else {
@@ -145,7 +223,7 @@ class SolitaireGame {
         
         if (this.waste.length > 0) {
             const card = this.waste[this.waste.length - 1];
-            const cardElement = this.createCardElement(card, true);
+            const cardElement = this.createCardElement(card, true, true);
             cardElement.style.position = 'relative';
             cardElement.addEventListener('click', () => this.selectCard(card, 'waste'));
             this.setupCardDrag(cardElement, card, 'waste');
@@ -162,7 +240,7 @@ class SolitaireGame {
             
             if (this.foundations[i].length > 0) {
                 const card = this.foundations[i][this.foundations[i].length - 1];
-                const cardElement = this.createCardElement(card, true);
+                const cardElement = this.createCardElement(card, true, true);
                 cardElement.style.position = 'relative';
                 foundationPile.appendChild(cardElement);
             } else {
@@ -182,7 +260,7 @@ class SolitaireGame {
             }
             
             this.tableau[col].forEach((card, index) => {
-                const cardElement = this.createCardElement(card, card.faceUp);
+                const cardElement = this.createCardElement(card, card.faceUp, true);
                 cardElement.style.position = 'absolute';
                 cardElement.style.top = `${index * 20}px`;
                 cardElement.style.zIndex = index;
@@ -197,7 +275,7 @@ class SolitaireGame {
         }
     }
     
-    createCardElement(card, faceUp) {
+    createCardElement(card, faceUp, skipAnimation = false) {
         const cardElement = document.createElement('div');
         cardElement.className = `card ${card.color}`;
         cardElement.setAttribute('data-card-id', card.id);
@@ -221,16 +299,22 @@ class SolitaireGame {
             `;
         }
         
-        // Add premium entrance animation
-        cardElement.style.opacity = '0';
-        cardElement.style.transform = 'scale(0.8) rotateY(180deg)';
-        
-        // Smooth entrance animation
-        requestAnimationFrame(() => {
-            cardElement.style.transition = 'all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+        if (skipAnimation) {
+            // No animation - card appears immediately in final state
             cardElement.style.opacity = '1';
             cardElement.style.transform = 'scale(1) rotateY(0deg)';
-        });
+        } else {
+            // Add premium entrance animation
+            cardElement.style.opacity = '0';
+            cardElement.style.transform = 'scale(0.8) rotateY(180deg)';
+            
+            // Smooth entrance animation
+            requestAnimationFrame(() => {
+                cardElement.style.transition = 'all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                cardElement.style.opacity = '1';
+                cardElement.style.transform = 'scale(1) rotateY(0deg)';
+            });
+        }
         
         return cardElement;
     }
@@ -483,6 +567,10 @@ class SolitaireGame {
             card.faceUp = true;
             this.waste.push(card);
             this.moves++;
+            
+            // Render all piles without animation, then animate just the new card
+            this.renderGame();
+            this.animateNewWasteCard(card);
         } else if (this.waste.length > 0) {
             // Reset stock from waste
             while (this.waste.length > 0) {
@@ -491,15 +579,34 @@ class SolitaireGame {
                 this.stock.push(card);
             }
             this.moves++;
+            this.renderGame();
         }
         
-        this.renderGame();
         this.updateScore();
         
         // Check for game over after dealing
         setTimeout(() => {
             this.checkGameOver();
         }, 100);
+    }
+    
+    animateNewWasteCard(card) {
+        const cardElement = document.querySelector(`[data-card-id="${card.id}"]`);
+        if (!cardElement) return;
+        
+        // Start with face-down appearance
+        cardElement.style.opacity = '1';
+        cardElement.style.transform = 'scale(0.8) rotateY(180deg)';
+        cardElement.style.transition = 'none';
+        
+        // Force reflow
+        cardElement.offsetHeight;
+        
+        // Animate to face-up
+        requestAnimationFrame(() => {
+            cardElement.style.transition = 'all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+            cardElement.style.transform = 'scale(1) rotateY(0deg)';
+        });
     }
     
     updateScore() {
@@ -1714,12 +1821,12 @@ class BlackjackGame {
         container.innerHTML = '';
         
         hand.forEach((card, index) => {
-            const cardElement = this.createCardElement(card, hideFirstCard && index === 0);
+            const cardElement = this.createCardElement(card, hideFirstCard && index === 0, true);
             container.appendChild(cardElement);
         });
     }
     
-    createCardElement(card, faceDown) {
+    createCardElement(card, faceDown, skipAnimation = false) {
         const cardElement = document.createElement('div');
         cardElement.className = `card ${card.color}`;
         cardElement.setAttribute('data-card-id', card.id);
@@ -1742,15 +1849,21 @@ class BlackjackGame {
             `;
         }
         
-        // Add entrance animation
-        cardElement.style.opacity = '0';
-        cardElement.style.transform = 'scale(0.8) rotateY(180deg)';
-        
-        requestAnimationFrame(() => {
-            cardElement.style.transition = 'all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+        if (skipAnimation) {
+            // No animation - card appears immediately in final state
             cardElement.style.opacity = '1';
             cardElement.style.transform = 'scale(1) rotateY(0deg)';
-        });
+        } else {
+            // Add entrance animation
+            cardElement.style.opacity = '0';
+            cardElement.style.transform = 'scale(0.8) rotateY(180deg)';
+            
+            requestAnimationFrame(() => {
+                cardElement.style.transition = 'all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                cardElement.style.opacity = '1';
+                cardElement.style.transform = 'scale(1) rotateY(0deg)';
+            });
+        }
         
         return cardElement;
     }
